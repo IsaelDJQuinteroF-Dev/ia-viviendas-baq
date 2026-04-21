@@ -1,0 +1,15 @@
+# Ignorar archivos de datos pesados
+*.csv
+*.xlsx
+
+# Ignorar entorno virtual de Python
+venv/
+__pycache__/
+
+# Archivos de configuración
+.env
+backend/venv/
+
+*.py[cod]
+data/*.csv
+.DS_Store
