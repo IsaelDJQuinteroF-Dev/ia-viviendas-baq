@@ -4,42 +4,58 @@ import pandas as pd
 
 async def ejecutar_scraper():
     async with async_playwright() as p:
-        print("🤖 Iniciando robot navegador (Playwright)...")
-        # headless=True para que trabaje en segundo plano
-        browser = await p.chromium.launch(headless=True) 
+        print("🤖 Iniciando robot explorador...")
+        browser = await p.chromium.launch(headless=False) # Lo dejamos visible para ver qué hace
         page = await browser.new_page()
         
-        url = "https://www.sales.com.co/inmuebles-venta/inmuebles-en-venta-en-barranquilla/2/todas"
-        print(f"🔗 Conectando a: {url}")
+        print("🌐 Navegando a la lista de Barranquilla...")
+        await page.goto("https://www.sales.com.co/inmuebles-venta/casas-en-venta-en-barranquilla/2/todas", wait_until="networkidle")
+
+        # Scroll para cargar todo
+        await page.evaluate("window.scrollTo(0, document.body.scrollHeight)")
+        await page.wait_for_timeout(3000)
+
+        # Capturamos enlaces
+        enlaces = await page.eval_on_selector_all("a[href*='/inmueble-venta/']", "nodes => nodes.map(n => n.href)")
+        enlaces = list(set(enlaces)) 
         
-        await page.goto(url, wait_until="networkidle")
+        print(f"🏠 ¡Detectadas {len(enlaces)} casas! Entrando a investigar...")
 
-        print("⏳ Esperando carga de datos dinámicos...")
-        await page.wait_for_selector(".price:not(:has-text('{{'))")
-
-        viviendas = []
-        cards = await page.query_selector_all(".boxprod")
-
-        for card in cards:
+        datos_finales = []
+        for link in enlaces[:5]: # Solo 5 para probar rápido
             try:
+                print(f"🔍 Revisando: {link}")
+                await page.goto(link, wait_until="domcontentloaded")
+                
+                # ESPERA CRÍTICA: Damos tiempo a que aparezca la tabla
+                await page.wait_for_timeout(5000) 
 
-                precio_texto = await card.eval_on_selector(".price", "el => el.innerText")
-                barrio_texto = await card.eval_on_selector("h5", "el => el.innerText")
-                
-                precio_limpio = precio_texto.replace('$', '').replace('.', '').replace('venta', '').strip()
-                
-                viviendas.append({
-                    "Barrio": barrio_texto.strip(),
-                    "Precio": precio_limpio
-                })
-            except:
+                # Extracción más robusta usando texto plano si falla el selector
+                contenido = await page.content()
+                if "Barrio" in contenido:
+                    # Buscamos el dato que está justo después de la palabra 'Barrio'
+                    barrio = await page.locator("td:right-of(td:has-text('Barrio'))").first.inner_text()
+                    precio = await page.locator(".price").first.inner_text()
+                    
+                    resumen = {
+                        "Barrio": barrio.strip(),
+                        "Precio": precio.strip(),
+                        "Link": link
+                    }
+                    datos_finales.append(resumen)
+                    print(f"✅ ¡Dato capturado! Barrio: {resumen['Barrio']}")
+            except Exception as e:
+                print(f"⚠️ Error en esta casa: {e}")
                 continue
 
+        if datos_finales:
+            df = pd.DataFrame(datos_finales)
+            df.to_csv('../data/viviendas_baq.csv', index=False, encoding='utf-8')
+            print(f"🏁 ¡Misión cumplida! {len(datos_finales)} registros guardados.")
+        else:
+            print("❌ El robot regresó con las manos vacías otra vez.")
+            
         await browser.close()
-        
-        df = pd.DataFrame(viviendas)
-        df.to_csv('../data/viviendas_baq.csv', index=False, encoding='utf-8')
-        print(f"✅ ¡Éxito! Se capturaron {len(viviendas)} registros reales.")
 
 if __name__ == "__main__":
     asyncio.run(ejecutar_scraper())
