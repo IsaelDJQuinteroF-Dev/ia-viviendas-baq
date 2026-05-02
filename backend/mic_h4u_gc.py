@@ -19,20 +19,27 @@ SITIOS = [
         ),
         "dominio": "micinmobiliaria.com",
     },
+#    
+#   {
+#        "nombre": "HOUSE4U",
+#        "url_lista": (
+#            "https://house4uonline.co/s/casa/venta/atlantico/barranquilla/"
+#            "?id_city=82&id_property_type=1&business_type%5B%5D=for_sale"
+#        ),
+#        "dominio": "house4uonline.co",
+#    },
+
     {
-        "nombre": "HOUSE4U",
+        "nombre": "GC",
         "url_lista": (
-            "https://house4uonline.co/s/casa/venta/atlantico/barranquilla/"
-            "?id_city=82&id_property_type=1&business_type%5B%5D=for_sale"
+            "https://gcinmobiliaria.com.co/s?id_city=82"
+            "&id_location=&id_zone="
+            "&id_property_type=1&id_property_condition="
+            "&business_type%5B%5D=for_sale"
+            "&bedrooms=&bathrooms=&min_price=&max_price="
         ),
-        "dominio": "house4uonline.co",
+        "dominio": "gcinmobiliaria.com.co",
     },
-    # GC — descomentar cuando confirmes la URL
-    # {
-    #     "nombre": "GC",
-    #     "url_lista": "https://gcinmobiliaria.com.co/s?...",
-    #     "dominio": "gcinmobiliaria.com.co",
-    # },
 ]
 
 # Fase actual: solo casas residenciales
@@ -82,26 +89,6 @@ def es_url_detalle(url: str, dominio: str) -> bool:
         and url.count("/") >= 4
     )
 
-
-# ─────────────────────────────────────────────
-# PARSER TABLA ul.list-info-2
-# Estructura confirmada en inspector:
-#
-#   <ul class="list-info-2 row">
-#     <li class="col-lg-4 col-md-6">País: Colombia</li>
-#     <li class="col-lg-4 col-md-6">Ciudad: Barranquilla</li>
-#     <li class="col-lg-4 col-md-6">Zona: Riomar</li>
-#     <li class="col-lg-4 col-md-6">Localidad: Riomar</li>
-#     <li class="col-lg-4 col-md-6">Área Construida: 713 m²</li>
-#     <li class="col-lg-4 col-md-6">Alcobas: 4</li>
-#     <li class="col-lg-4 col-md-6">Baños: 7</li>
-#     <li class="col-lg-4 col-md-6">Garaje: 1</li>
-#     <li class="col-lg-4 col-md-6">Estrato: 6</li>
-#     <li class="col-lg-4 col-md-6">Piso: 2</li>
-#     <li class="col-lg-4 col-md-6">Año construcción: 1994</li>
-#     ...
-#   </ul>
-# ─────────────────────────────────────────────
 def parsear_tabla(items: list) -> dict:
     """
     Convierte lista ['Label: Valor', ...] en dict {'label': 'valor'}.
